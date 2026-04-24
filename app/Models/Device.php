@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class Device extends Model
 {
     protected $fillable = [
+        'user_id',
         'device_id',
         'name',
         'location',
@@ -21,6 +23,14 @@ class Device extends Model
         'is_active' => 'boolean',
         'last_seen_at' => 'datetime',
     ];
+
+    /**
+     * Get the user that owns this device.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 
     /**
      * Get all sensor readings for this device.

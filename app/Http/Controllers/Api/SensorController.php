@@ -27,12 +27,13 @@ class SensorController extends Controller
         $device = Device::where('device_id', $validated['device_id'])->first();
 
         if (!$device) {
-            // Auto-register new device
+            // Auto-register new device (user_id is null until claimed via dashboard)
             $device = Device::create([
                 'device_id' => $validated['device_id'],
                 'name' => 'Device ' . $validated['device_id'],
                 'location' => 'Belum diatur',
                 'api_key' => $validated['api_key'],
+                'user_id' => null,
                 'is_active' => true,
             ]);
         }

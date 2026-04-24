@@ -64,6 +64,23 @@
         </div>
 
         <div class="sidebar-footer">
+            <div class="user-info" style="padding:12px 20px;border-top:1px solid rgba(255,255,255,0.06);margin-bottom:8px">
+                <div style="display:flex;align-items:center;gap:10px">
+                    <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;color:#fff;flex-shrink:0">
+                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                    </div>
+                    <div style="overflow:hidden">
+                        <div style="font-size:0.85rem;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ Auth::user()->name }}</div>
+                        <div style="font-size:0.7rem;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ Auth::user()->email }}</div>
+                    </div>
+                </div>
+            </div>
+            <form method="POST" action="{{ route('logout') }}" style="padding:0 20px 12px">
+                @csrf
+                <button type="submit" style="width:100%;padding:8px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:#ef4444;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'">
+                    Logout
+                </button>
+            </form>
             <div class="status-indicator" id="connection-status">
                 <div class="status-dot online"></div>
                 <span>Sistem Aktif</span>

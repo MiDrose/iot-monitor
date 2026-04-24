@@ -44,6 +44,76 @@
         </div>
     </div>
 
+    {{-- Add Device / Claim Device --}}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;margin-bottom:24px">
+
+        {{-- Tambah Perangkat Baru --}}
+        <div class="card" id="card-add-device">
+            <div class="card-header">
+                <div class="card-icon" style="background:linear-gradient(135deg,rgba(16,185,129,0.2),rgba(6,182,212,0.2))">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                </div>
+                <div class="card-label">
+                    <span class="label-text">Tambah Perangkat Baru</span>
+                    <span class="label-unit">Daftarkan ESP32 sebelum dihubungkan</span>
+                </div>
+            </div>
+            <form method="POST" action="{{ route('devices.add') }}" style="padding:0 20px 20px">
+                @csrf
+                <div class="form-group" style="margin-bottom:12px">
+                    <label for="add-device-id" style="font-size:0.75rem;color:#94a3b8;margin-bottom:4px;display:block">Device ID</label>
+                    <input type="text" name="device_id" id="add-device-id" class="input-field" placeholder="ESP32-001" value="{{ old('device_id') }}" required>
+                </div>
+                <div class="form-group" style="margin-bottom:12px">
+                    <label for="add-device-name" style="font-size:0.75rem;color:#94a3b8;margin-bottom:4px;display:block">Nama Perangkat</label>
+                    <input type="text" name="name" id="add-device-name" class="input-field" placeholder="Sensor Ruang Server" value="{{ old('name') }}" required>
+                </div>
+                <div class="form-group" style="margin-bottom:12px">
+                    <label for="add-device-location" style="font-size:0.75rem;color:#94a3b8;margin-bottom:4px;display:block">Lokasi</label>
+                    <input type="text" name="location" id="add-device-location" class="input-field" placeholder="Lantai 2, Ruang Server" value="{{ old('location') }}">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    Tambah Perangkat
+                </button>
+            </form>
+        </div>
+
+        {{-- Klaim Perangkat --}}
+        <div class="card" id="card-claim-device">
+            <div class="card-header">
+                <div class="card-icon" style="background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(249,115,22,0.2))">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                </div>
+                <div class="card-label">
+                    <span class="label-text">Klaim Perangkat</span>
+                    <span class="label-unit">Ambil alih ESP32 yang sudah terdaftar otomatis</span>
+                </div>
+            </div>
+            <form method="POST" action="{{ route('devices.claim') }}" style="padding:0 20px 20px">
+                @csrf
+                <div class="form-group" style="margin-bottom:12px">
+                    <label for="claim-device-id" style="font-size:0.75rem;color:#94a3b8;margin-bottom:4px;display:block">Device ID</label>
+                    <input type="text" name="claim_device_id" id="claim-device-id" class="input-field" placeholder="ESP32-001" required>
+                </div>
+                <div class="form-group" style="margin-bottom:12px">
+                    <label for="claim-api-key" style="font-size:0.75rem;color:#94a3b8;margin-bottom:4px;display:block">API Key</label>
+                    <input type="text" name="claim_api_key" id="claim-api-key" class="input-field" placeholder="API key yang diset di ESP32">
+                    <div style="font-size:0.7rem;color:#475569;margin-top:4px">Masukkan API Key yang sama dengan yang ada di ESP32 Anda</div>
+                </div>
+                @if($errors->has('claim_device_id'))
+                <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:10px;margin-bottom:12px;font-size:0.8rem;color:#ef4444">
+                    {{ $errors->first('claim_device_id') }}
+                </div>
+                @endif
+                <button type="submit" class="btn btn-warning" style="width:100%">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    Klaim Perangkat
+                </button>
+            </form>
+        </div>
+    </div>
+
     {{-- Device Cards --}}
     <div class="devices-grid">
         @forelse($devices as $device)

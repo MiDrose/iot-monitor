@@ -4,7 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Device;
 use App\Models\SensorReading;
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,8 +15,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create a sample device
+        // Create demo user
+        $user = User::create([
+            'name' => 'Admin IoT',
+            'email' => 'admin@iot.com',
+            'password' => Hash::make('password'),
+        ]);
+
+        // Create a sample device owned by the user
         $device = Device::create([
+            'user_id' => $user->id,
             'device_id' => 'ESP32-001',
             'name' => 'Sensor Ruang Utama',
             'location' => 'Ruang Server',
@@ -29,13 +39,11 @@ class DatabaseSeeder extends Seeder
         for ($i = 0; $i < 144; $i++) {
             $time = $startTime->copy()->addMinutes($i * 10);
 
-            // Simulate realistic temperature (25-32°C with daily cycle)
             $hour = $time->hour;
             $baseTemp = 27;
-            $tempVariation = sin(($hour - 6) * M_PI / 12) * 3; // peaks at noon
+            $tempVariation = sin(($hour - 6) * M_PI / 12) * 3;
             $temp = $baseTemp + $tempVariation + (mt_rand(-10, 10) / 10);
 
-            // Simulate realistic humidity (50-75% inverse to temperature)
             $baseHum = 62;
             $humVariation = -sin(($hour - 6) * M_PI / 12) * 8;
             $hum = $baseHum + $humVariation + (mt_rand(-20, 20) / 10);

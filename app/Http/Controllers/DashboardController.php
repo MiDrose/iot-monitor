@@ -5,18 +5,29 @@ namespace App\Http\Controllers;
 use App\Models\Device;
 use App\Models\SensorReading;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
+    /**
+     * Get device IDs belonging to the current user.
+     */
+    private function userDeviceIds()
+    {
+        return Auth::user()->devices()->pluck('id');
+    }
+
     /**
      * Dashboard home page - real-time monitoring.
      */
     public function index()
     {
-        $devices = Device::where('is_active', true)->with('latestReading')->get();
+        $deviceIds = $this->userDeviceIds();
+        $devices = Device::whereIn('id', $deviceIds)->where('is_active', true)->with('latestReading')->get();
 
-        // Today's statistics
-        $todayStats = SensorReading::where('created_at', '>=', now()->startOfDay())
+        // Today's statistics (only user's devices)
+        $todayStats = SensorReading::whereIn('device_id', $deviceIds)
+            ->where('created_at', '>=', now()->startOfDay())
             ->selectRaw('
                 MIN(temperature) as temp_min,
                 MAX(temperature) as temp_max,
@@ -28,8 +39,9 @@ class DashboardController extends Controller
             ')
             ->first();
 
-        // Recent readings for chart (last 24 hours, sampled)
-        $chartData = SensorReading::where('created_at', '>=', now()->subHours(24))
+        // Recent readings for chart (last 24 hours)
+        $chartData = SensorReading::whereIn('device_id', $deviceIds)
+            ->where('created_at', '>=', now()->subHours(24))
             ->orderBy('created_at', 'asc')
             ->get(['temperature', 'humidity', 'created_at'])
             ->map(function ($r) {
@@ -48,12 +60,15 @@ class DashboardController extends Controller
      */
     public function history(Request $request)
     {
-        $devices = Device::where('is_active', true)->get();
+        $deviceIds = $this->userDeviceIds();
+        $devices = Device::whereIn('id', $deviceIds)->where('is_active', true)->get();
 
-        $query = SensorReading::with('device')->orderBy('created_at', 'desc');
+        $query = SensorReading::with('device')
+            ->whereIn('device_id', $deviceIds)
+            ->orderBy('created_at', 'desc');
 
         if ($request->query('device_id')) {
-            $device = Device::where('device_id', $request->query('device_id'))->first();
+            $device = Device::whereIn('id', $deviceIds)->where('device_id', $request->query('device_id'))->first();
             if ($device) {
                 $query->where('device_id', $device->id);
             }
@@ -76,8 +91,60 @@ class DashboardController extends Controller
      */
     public function devices()
     {
-        $devices = Device::withCount('sensorReadings')->get();
+        $devices = Auth::user()->devices()->withCount('sensorReadings')->get();
         return view('dashboard.devices', compact('devices'));
+    }
+
+    /**
+     * Add a new device manually (pre-register before ESP32 connects).
+     */
+    public function addDevice(Request $request)
+    {
+        $validated = $request->validate([
+            'device_id' => 'required|string|max:50|unique:devices,device_id',
+            'name' => 'required|string|max:100',
+            'location' => 'nullable|string|max:100',
+        ]);
+
+        $apiKey = Device::generateApiKey();
+
+        Device::create([
+            'user_id' => Auth::id(),
+            'device_id' => $validated['device_id'],
+            'name' => $validated['name'],
+            'location' => $validated['location'] ?? 'Belum diatur',
+            'api_key' => $apiKey,
+            'is_active' => true,
+        ]);
+
+        return redirect()->route('devices')->with('success', 'Perangkat berhasil ditambahkan! Gunakan API Key yang tertera di ESP32 Anda.');
+    }
+
+    /**
+     * Claim an existing unclaimed device (auto-registered by ESP32).
+     */
+    public function claimDevice(Request $request)
+    {
+        $validated = $request->validate([
+            'claim_device_id' => 'required|string|max:50',
+            'claim_api_key' => 'required|string',
+        ]);
+
+        $device = Device::where('device_id', $validated['claim_device_id'])
+            ->where('api_key', $validated['claim_api_key'])
+            ->first();
+
+        if (!$device) {
+            return redirect()->route('devices')->withErrors(['claim_device_id' => 'Device ID atau API Key salah.']);
+        }
+
+        if ($device->user_id !== null) {
+            return redirect()->route('devices')->withErrors(['claim_device_id' => 'Perangkat ini sudah dimiliki user lain.']);
+        }
+
+        $device->update(['user_id' => Auth::id()]);
+
+        return redirect()->route('devices')->with('success', 'Perangkat "' . $device->name . '" berhasil diklaim!');
     }
 
     /**
@@ -85,6 +152,11 @@ class DashboardController extends Controller
      */
     public function updateDevice(Request $request, Device $device)
     {
+        // Ensure user owns this device
+        if ($device->user_id !== Auth::id()) {
+            abort(403);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'location' => 'nullable|string|max:100',
@@ -101,6 +173,10 @@ class DashboardController extends Controller
      */
     public function regenerateApiKey(Device $device)
     {
+        if ($device->user_id !== Auth::id()) {
+            abort(403);
+        }
+
         $device->update(['api_key' => Device::generateApiKey()]);
 
         return redirect()->route('devices')->with('success', 'API Key berhasil di-generate ulang!');
@@ -111,10 +187,14 @@ class DashboardController extends Controller
      */
     public function export(Request $request)
     {
-        $query = SensorReading::with('device')->orderBy('created_at', 'desc');
+        $deviceIds = $this->userDeviceIds();
+
+        $query = SensorReading::with('device')
+            ->whereIn('device_id', $deviceIds)
+            ->orderBy('created_at', 'desc');
 
         if ($request->query('device_id')) {
-            $device = Device::where('device_id', $request->query('device_id'))->first();
+            $device = Device::whereIn('id', $deviceIds)->where('device_id', $request->query('device_id'))->first();
             if ($device) {
                 $query->where('device_id', $device->id);
             }
