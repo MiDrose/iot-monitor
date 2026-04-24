@@ -45,7 +45,7 @@
     </div>
 
     {{-- Add Device / Claim Device --}}
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;margin-bottom:24px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-bottom:24px">
 
         {{-- Tambah Perangkat Baru --}}
         <div class="card" id="card-add-device">
